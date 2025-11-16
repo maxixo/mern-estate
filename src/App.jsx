@@ -6,10 +6,12 @@ import Profile from './pages/Profile.jsx'
 import SignUp from './pages/SignUp.jsx'
 import SignIn from './pages/Sign In.jsx'
 import SignOut from './pages/SignOut.jsx'
+import Header from './components/Header.jsx'
 
 const App = () => {
   return (
     <BrowserRouter>
+    <Header/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sign-in" element={<SignIn />} />
