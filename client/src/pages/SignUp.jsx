@@ -10,7 +10,7 @@ const SignUp = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({
-      ...prev,
+      ...formData,
       [e.target.id]: e.target.value,
     }));
   };
