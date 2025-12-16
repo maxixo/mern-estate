@@ -28,7 +28,7 @@ export const signin = async (req, res, next) => {
         return next(errorHandler(500, 'JWT_SECRET must have a value'));
       }
       const token = jwt.sign({id: validUser._id}, process.env.JWT_SECRET);
-      const { password:passs _, ...rest } = validUser._doc;
+      const { password:pass , ...rest } = validUser._doc;
       res.cookie("access_token", token, 
         {httpOnly: true}).status(200).json(validUser)
 
