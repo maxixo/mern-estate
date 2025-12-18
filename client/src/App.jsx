@@ -4,7 +4,7 @@ import Home from './pages/Home.jsx'
 import About from './pages/About.jsx'
 import Profile from './pages/Profile.jsx'
 import SignUp from './pages/SignUp.jsx'
-import SignIn from './pages/Sign In.jsx'
+import SignIn from './pages/SignIn.jsx'
 import SignOut from './pages/SignOut.jsx'
 import Header from './components/Header.jsx'
 
