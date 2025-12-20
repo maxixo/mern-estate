@@ -1,24 +1,26 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect } from "react";
 import { storage, ID } from "../lib/appwrite";
+import { updateUserStart, updateUserSuccess, updateUserFailure } from "../redux/user/userSlice";
+import { Permission, Role } from "appwrite";
 
 const Profile = () => {
   const fileRef = useRef(null);
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, loading, error, updateSuccess } = useSelector(
+    (state) => state.user
+  );
 
   const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID;
 
-  const [selectedFile, setSelectedFile] = useState(null); // 👈 NEW
+  const [selectedFile, setSelectedFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(currentUser.avatar);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [uploadedFileId, setUploadedFileId] = useState("");
   const [formData, setFormData] = useState({});
+  const dispatch = useDispatch();
 
-  /* ----------------------------------
-    1. File selection ONLY
-  -----------------------------------*/
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -34,14 +36,11 @@ const Profile = () => {
     }
 
     setUploadError("");
-    setSelectedFile(file); // 👈 triggers useEffect
-    setAvatarPreview(URL.createObjectURL(file)); // instant preview
+    setSelectedFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
     e.target.value = "";
   };
 
-  /* ----------------------------------
-    2. Upload runs automatically
-  -----------------------------------*/
   useEffect(() => {
     if (!selectedFile) return;
 
@@ -55,7 +54,7 @@ const Profile = () => {
           bucketId,
           ID.unique(),
           selectedFile,
-          ['read("any")'] ,// ✅ permissions must be array or null (fixes 400)
+          [Permission.read(Role.any())],
           (event) => {
             if (event.total) {
               const pct = Math.round((event.loaded / event.total) * 100);
@@ -70,13 +69,11 @@ const Profile = () => {
 
         setAvatarPreview(fileUrl);
 
-        // 👇 NEW: Update formData with the new avatar URL
         setFormData((prev) => ({
           ...prev,
-          avatar: fileUrl, // 👈 Save the URL to form state
+          avatar: fileUrl,
         }));
 
-        console.log(fileUrl); // ✅ was `avatar` (undefined)
         setProgress(100);
       } catch (err) {
         console.error(err);
@@ -87,14 +84,57 @@ const Profile = () => {
         setSelectedFile(null);
       }
     };
+
     uploadImage();
   }, [selectedFile, bucketId, currentUser.avatar]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      dispatch(updateUserStart());
+      
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!data.success && data.message) {
+        // Backend sent structured error
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+
+      if (!res.ok) {
+        // Fallback for non-JSON errors
+        dispatch(updateUserFailure(data.message || "Update failed"));
+        return;
+      }
+
+      dispatch(updateUserSuccess(data));
+    } catch (error) {
+      dispatch(updateUserFailure(error.message || "Network error occurred"));
+    }
+  };
 
   return (
     <main className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
 
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="file"
           ref={fileRef}
@@ -103,10 +143,9 @@ const Profile = () => {
           onChange={handleFileChange}
         />
 
-        {/* Avatar */}
         <div className="self-center mt-2 relative">
           <img
-            src={avatarPreview}
+            src={formData.avatar || avatarPreview}
             alt="profile"
             onClick={() => fileRef.current.click()}
             className="rounded-full h-24 w-24 object-cover cursor-pointer"
@@ -119,7 +158,6 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Progress bar */}
         {uploading && (
           <div>
             <div className="flex justify-between text-xs mb-1">
@@ -143,18 +181,52 @@ const Profile = () => {
           <p className="text-green-700 text-sm">Upload complete ✅</p>
         )}
 
-        <input className="border p-3 rounded-lg" placeholder="username" />
-        <input className="border p-3 rounded-lg" placeholder="email" />
-        <input className="border p-3 rounded-lg" placeholder="password" />
+        <input
+          className="border p-3 rounded-lg"
+          onChange={handleChange}
+          id="username"
+          defaultValue={currentUser.username}
+          placeholder="username"
+        />
+        <input
+          className="border p-3 rounded-lg"
+          onChange={handleChange}
+          id="email"
+          defaultValue={currentUser.email}
+          placeholder="email"
+        />
+        <input
+          type="password"
+          className="border p-3 rounded-lg"
+          onChange={handleChange}
+          id="password"
+          placeholder="password"
+        />
 
         <button
-          type="button"
-          disabled={uploading}
+          type="submit"
+          disabled={uploading || loading}
           className="bg-slate-700 text-white p-3 rounded-lg uppercase disabled:opacity-60"
         >
-          Update
+          {loading ? "Updating..." : "Update"}
         </button>
       </form>
+
+      {error && <p className="text-red-600 text-sm text-center mt-4">{error}</p>}
+      {updateSuccess && (
+        <p className="text-green-700 text-sm text-center mt-4">
+          Profile updated successfully.
+        </p>
+      )}
+
+      <div className="flex justify-between mt-5">
+        <button type="button" className="text-red-700 font-medium hover:underline">
+          Sign out
+        </button>
+        <button type="button" className="text-red-700 font-medium hover:underline">
+          Delete account
+        </button>
+      </div>
     </main>
   );
 };

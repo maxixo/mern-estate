@@ -1,12 +1,23 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true}, 
-    avatar: { type: String, default: "https://wallpapers.com/images/featured-full/cool-profile-picture-87h46gcobjl5e4xu.jpg" }
-}, { timestamps: true });
+    password: { type: String, required: true },
+    avatar: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
 
-const User = mongoose.model("User", userSchema);
+userSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    delete ret.password;
+    return ret;
+  }
+});
+
+// ✅ Prevent OverwriteModelError in dev/hot reload
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default User;

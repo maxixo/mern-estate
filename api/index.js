@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import userRouter from './routes/user.route.js';
 import authRouter from './routes/auth.route.js';
+import cookieParser from 'cookie-parser';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,22 +23,33 @@ mongoose.connect(process.env.MONGO).then(() => {
     console.error('❌ Failed to connect to MongoDB:', err.message);
   });
 
-  
+// Middleware - ORDER MATTERS!
 app.use(express.json());
+app.use(cookieParser());
 
+// Routes
+app.use("/api/user", userRouter);
+app.use("/api/auth", authRouter);
 
-  app.use("/api/user" , userRouter);
-  app.use("/api/auth" , authRouter);
+// JSON parse error handling
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      statusCode: 400,
+      message: err.message
+    });
+  }
+  next(err);
+});
 
-
-// Error handling middleware
-  app.use((err, req, res, next) => {
-   const statusCode = err.statusCode || 500;
-   const message = err.message || 'Internal Server Error';
-    return res.status(statusCode).json({
-        success: false, 
-        statusCode: statusCode,
-        message
-      
-      });
-  })
+// General error handling middleware
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  return res.status(statusCode).json({
+    success: false, 
+    statusCode, // ✅ Simplified (no need to repeat)
+    message
+  });
+});
