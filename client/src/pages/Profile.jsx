@@ -39,6 +39,7 @@ const Profile = () => {
       ? avatarSrcCandidate
       : null;
 
+      
   useEffect(() => {
     if (!updateSuccess) return;
     const timeoutId = setTimeout(() => {

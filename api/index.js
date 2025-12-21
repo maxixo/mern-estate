@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import userRouter from './routes/user.route.js';
 import authRouter from './routes/auth.route.js';
+import listingRouter from './routes/listing.route.js';
 import cookieParser from 'cookie-parser';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +31,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
+app.use('/api/listing', listingRouter); // Assuming listingRouter is defined elsewhere
 
 // JSON parse error handling
 app.use((err, req, res, next) => {
