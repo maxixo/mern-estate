@@ -14,7 +14,7 @@ import {
   signOutUserSuccess, // Make sure this is imported
 } from "../redux/user/userSlice";
 import { Permission, Role } from "appwrite";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , Link} from "react-router-dom";
 
 const Profile = () => {
   const fileRef = useRef(null);
@@ -39,7 +39,7 @@ const Profile = () => {
       ? avatarSrcCandidate
       : null;
 
-      
+
   useEffect(() => {
     if (!updateSuccess) return;
     const timeoutId = setTimeout(() => {
@@ -317,7 +317,12 @@ const Profile = () => {
         >
           {loading ? "Updating..." : "Update"}
         </button>
+        <Link className="bg-green-700 text-white p-3
+         rounded-lg uppercase text-center hover:opacity-95" to={"/create-listing"}>
+        Create Listing 
+        </Link>
       </form>
+
 
       {error && <p className="text-red-600 text-sm text-center mt-4">{error}</p>}
       {deleteError && <p className="text-red-600 text-sm text-center mt-4">{deleteError}</p>}
