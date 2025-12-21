@@ -5,6 +5,10 @@ import { useSelector } from 'react-redux'
 const Header = () => {
 
   const {currentUser} = useSelector((state) => state.user);
+  const avatarSrc =
+    typeof currentUser?.avatar === "string" && currentUser.avatar.trim()
+      ? currentUser.avatar
+      : null;
   
   return  (
   <header className='bg-slate-200 shadow-md'>
@@ -32,7 +36,16 @@ const Header = () => {
          <Link to="/profile">
 
      {currentUser ? (        
-        <img  className='rounded-full h-7 w-7 object-cover '  src={currentUser.avatar} alt="profile" />
+        avatarSrc ? (
+          <img className='rounded-full h-7 w-7 object-cover' src={avatarSrc} alt="profile" />
+        ) : (
+          <div
+            className='rounded-full h-7 w-7 bg-slate-400 text-white flex items-center justify-center text-xs font-semibold'
+            aria-label="profile"
+          >
+            {(currentUser?.username || "?").slice(0, 1).toUpperCase()}
+          </div>
+        )
         ) :
           ( <li  className=' sm:inline text-slate-700 hover:underline'>Sign-in</li>
        )}

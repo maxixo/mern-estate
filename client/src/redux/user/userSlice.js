@@ -42,9 +42,33 @@ import {createSlice} from '@reduxjs/toolkit'
                     state.error = action.payload;
                     state.loading = false;
                     state.updateSuccess = false;
-                }
+                },
+                clearUpdateSuccess: (state) => {
+                    state.updateSuccess = false;
+                },
 
+                deleteUserStart:(state) => {
+                    state.loading = true;
             
+                },
+                deleteUserSuccess:(state) => {
+                    state.currentUser = null;
+                    state.loading = false;
+                    state.error = null;
+                    state.updateSuccess = false;
+                },
+                deleteUserFailure:(state, action) => {
+                    state.error = action.payload;
+                    state.loading = false;
+                    state.updateSuccess = false;
+
+                },
+                signOutUserSuccess:(state) => {
+                    state.currentUser = null;
+                    state.loading = false;
+                    state.error = null;
+                    state.updateSuccess = false;
+                },
             }
         });
 
@@ -54,7 +78,12 @@ import {createSlice} from '@reduxjs/toolkit'
             signInFailure,
             updateUserStart,
             updateUserSuccess,
-            updateUserFailure
+            updateUserFailure,
+            clearUpdateSuccess,
+            deleteUserStart,
+            deleteUserSuccess,
+            deleteUserFailure,
+            signOutUserSuccess,
         } = userSlice.actions;
 
         export default userSlice.reducer;

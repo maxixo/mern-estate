@@ -1,15 +1,25 @@
 import { useSelector, useDispatch } from "react-redux";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect} from "react";
 import { storage, ID } from "../lib/appwrite";
-import { updateUserStart, updateUserSuccess, updateUserFailure } from "../redux/user/userSlice";
+import {
+  updateUserStart,
+  updateUserSuccess,
+  updateUserFailure,
+  clearUpdateSuccess,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  signOutUserSuccess, // Make sure this is imported
+} from "../redux/user/userSlice";
 import { Permission, Role } from "appwrite";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const fileRef = useRef(null);
   const { currentUser, loading, error, updateSuccess } = useSelector(
     (state) => state.user
   );
-
+  const navigate = useNavigate();
   const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID;
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -19,7 +29,22 @@ const Profile = () => {
   const [uploadError, setUploadError] = useState("");
   const [uploadedFileId, setUploadedFileId] = useState("");
   const [formData, setFormData] = useState({});
+  const [deleteError, setDeleteError] = useState("");
   const dispatch = useDispatch();
+  const avatarSrcCandidate = formData.avatar || avatarPreview;
+  const avatarSrc =
+    typeof avatarSrcCandidate === "string" && avatarSrcCandidate.trim()
+      ? avatarSrcCandidate
+      : null;
+
+  useEffect(() => {
+    if (!updateSuccess) return;
+    const timeoutId = setTimeout(() => {
+      dispatch(clearUpdateSuccess());
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [updateSuccess, dispatch]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -113,13 +138,11 @@ const Profile = () => {
       const data = await res.json();
 
       if (!data.success && data.message) {
-        // Backend sent structured error
         dispatch(updateUserFailure(data.message));
         return;
       }
 
       if (!res.ok) {
-        // Fallback for non-JSON errors
         dispatch(updateUserFailure(data.message || "Update failed"));
         return;
       }
@@ -128,6 +151,53 @@ const Profile = () => {
     } catch (error) {
       dispatch(updateUserFailure(error.message || "Network error occurred"));
     }
+  };
+
+  const handleDeleteUser = async () => {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      dispatch(deleteUserStart());
+      setDeleteError("");
+      
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorMsg = data.message || "Delete failed";
+        dispatch(deleteUserFailure(errorMsg));
+        setDeleteError(errorMsg);
+        return;
+      }
+
+      // Successful deletion
+      dispatch(deleteUserSuccess());
+      
+      // Optional: You might want to redirect or show a message
+      // window.location.href = '/sign-in';
+      
+    } catch (error) {
+      const errorMsg = error.message || "Network error occurred";
+      dispatch(deleteUserFailure(errorMsg));
+      setDeleteError(errorMsg);
+    }
+  };
+
+  const handleSignOut = () => {
+    dispatch(signOutUserSuccess());
+    navigate("/sign-in");
   };
 
   return (
@@ -144,12 +214,22 @@ const Profile = () => {
         />
 
         <div className="self-center mt-2 relative">
-          <img
-            src={formData.avatar || avatarPreview}
-            alt="profile"
-            onClick={() => fileRef.current.click()}
-            className="rounded-full h-24 w-24 object-cover cursor-pointer"
-          />
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt="profile"
+              onClick={() => fileRef.current.click()}
+              className="rounded-full h-24 w-24 object-cover cursor-pointer"
+            />
+          ) : (
+            <div
+              onClick={() => fileRef.current.click()}
+              className="rounded-full h-24 w-24 bg-slate-400 text-white flex items-center justify-center text-3xl font-semibold cursor-pointer select-none"
+              aria-label="profile"
+            >
+              {(currentUser?.username || "?").slice(0, 1).toUpperCase()}
+            </div>
+          )}
 
           {uploading && (
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white text-xs">
@@ -212,7 +292,7 @@ const Profile = () => {
         </button>
       </form>
 
-      {error && <p className="text-red-600 text-sm text-center mt-4">{error}</p>}
+      {deleteError && <p className="text-red-600 text-sm text-center mt-4">{deleteError}</p>}
       {updateSuccess && (
         <p className="text-green-700 text-sm text-center mt-4">
           Profile updated successfully.
@@ -220,10 +300,19 @@ const Profile = () => {
       )}
 
       <div className="flex justify-between mt-5">
-        <button type="button" className="text-red-700 font-medium hover:underline">
+        <button 
+          onClick={handleSignOut}
+          type="button" 
+          className="text-red-700 font-medium hover:underline"
+        >
           Sign out
         </button>
-        <button type="button" className="text-red-700 font-medium hover:underline">
+        <button 
+          onClick={handleDeleteUser} 
+          type="button" 
+          className="text-red-700 font-medium hover:underline"
+          disabled={loading}
+        >
           Delete account
         </button>
       </div>
