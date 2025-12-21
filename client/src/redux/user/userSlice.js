@@ -63,12 +63,19 @@ import {createSlice} from '@reduxjs/toolkit'
                     state.updateSuccess = false;
 
                 },
+                
                 signOutUserSuccess:(state) => {
                     state.currentUser = null;
                     state.loading = false;
                     state.error = null;
                     state.updateSuccess = false;
                 },
+                signOutUserFailure:(state, action) => { 
+                    state.error = action.payload;
+                 },
+                 signOutUserStart:(state) => {
+                    state.loading = true;
+                 },       
             }
         });
 
@@ -83,6 +90,8 @@ import {createSlice} from '@reduxjs/toolkit'
             deleteUserStart,
             deleteUserSuccess,
             deleteUserFailure,
+            signOutUserStart,
+            signOutUserFailure,
             signOutUserSuccess,
         } = userSlice.actions;
 

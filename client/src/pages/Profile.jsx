@@ -9,6 +9,8 @@ import {
   deleteUserFailure,
   deleteUserStart,
   deleteUserSuccess,
+  signOutUserStart,
+  signOutUserFailure,
   signOutUserSuccess, // Make sure this is imported
 } from "../redux/user/userSlice";
 import { Permission, Role } from "appwrite";
@@ -183,7 +185,16 @@ const Profile = () => {
       }
 
       // Successful deletion
+      try {
+        await fetch("/api/auth/signout", {
+          method: "GET",
+          credentials: "include",
+        });
+      } catch {
+        // ignore network errors; user is already deleted
+      }
       dispatch(deleteUserSuccess());
+      navigate("/sign-in");
       
       // Optional: You might want to redirect or show a message
       // window.location.href = '/sign-in';
@@ -195,9 +206,24 @@ const Profile = () => {
     }
   };
 
-  const handleSignOut = () => {
-    dispatch(signOutUserSuccess());
-    navigate("/sign-in");
+  const handleSignOut = async () => {
+    try {
+      dispatch(signOutUserStart());
+      const res = await fetch("/api/auth/signout", {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false){
+        dispatch(signOutUserFailure(data.message || "Sign out failed"));
+        return;
+      }
+
+      dispatch(signOutUserSuccess());
+      navigate("/sign-in");
+    } catch (error) {
+      dispatch(signOutUserFailure(error.message || "Network error occurred"));
+    }
   };
 
   return (
@@ -292,6 +318,7 @@ const Profile = () => {
         </button>
       </form>
 
+      {error && <p className="text-red-600 text-sm text-center mt-4">{error}</p>}
       {deleteError && <p className="text-red-600 text-sm text-center mt-4">{deleteError}</p>}
       {updateSuccess && (
         <p className="text-green-700 text-sm text-center mt-4">
