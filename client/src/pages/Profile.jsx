@@ -28,16 +28,26 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(currentUser.avatar);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [uploadError, setUploadError] = useState("");
+  const [uploadError, setUploadError] = useState(null);
   const [uploadedFileId, setUploadedFileId] = useState("");
   const [formData, setFormData] = useState({});
-  const [deleteError, setDeleteError] = useState("");
+  const [deleteError, setDeleteError] = useState(null);
+  const [showListingsError, setShowListingsError] = useState(false);
+  const [userListings, setUserListings] = useState([]);
+  const [isUpdating, setIsUpdating] = useState(false);
   const dispatch = useDispatch();
   const avatarSrcCandidate = formData.avatar || avatarPreview;
   const avatarSrc =
     typeof avatarSrcCandidate === "string" && avatarSrcCandidate.trim()
       ? avatarSrcCandidate
       : null;
+  const hasUpdates = Object.keys(formData).length > 0;
+
+  const clearLocalErrors = () => {
+    setUploadError(null);
+    setDeleteError(null);
+    setShowListingsError(false);
+  };
 
 
   useEffect(() => {
@@ -50,6 +60,7 @@ const Profile = () => {
   }, [updateSuccess, dispatch]);
 
   const handleFileChange = (e) => {
+    clearLocalErrors();
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -63,7 +74,6 @@ const Profile = () => {
       return;
     }
 
-    setUploadError("");
     setSelectedFile(file);
     setAvatarPreview(URL.createObjectURL(file));
     e.target.value = "";
@@ -73,6 +83,7 @@ const Profile = () => {
     if (!selectedFile) return;
 
     const uploadImage = async () => {
+      setUploadError(null);
       setUploading(true);
       setProgress(0);
       setUploadedFileId("");
@@ -125,8 +136,11 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    clearLocalErrors();
+    if (!hasUpdates) return;
 
     try {
+      setIsUpdating(true);
       dispatch(updateUserStart());
       
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
@@ -153,6 +167,8 @@ const Profile = () => {
       dispatch(updateUserSuccess(data));
     } catch (error) {
       dispatch(updateUserFailure(error.message || "Network error occurred"));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -165,8 +181,8 @@ const Profile = () => {
     if (!confirmed) return;
 
     try {
+      clearLocalErrors();
       dispatch(deleteUserStart());
-      setDeleteError("");
       
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
@@ -209,6 +225,7 @@ const Profile = () => {
 
   const handleSignOut = async () => {
     try {
+      clearLocalErrors();
       dispatch(signOutUserStart());
       const res = await fetch("/api/auth/signout", {
         method: "GET",
@@ -226,6 +243,27 @@ const Profile = () => {
       dispatch(signOutUserFailure(error.message || "Network error occurred"));
     }
   };
+
+
+  const handleShowListings = async () => {
+      try {
+        clearLocalErrors();
+        const res = await fetch(`/api/user/listings/${currentUser._id}`);
+        const data = await res.json();
+        if (data.success === false) {
+
+          setShowListingsError(true);
+          return;
+        }
+        setUserListings(data);
+       
+        
+      } catch (error) {
+        setShowListingsError(true);
+      }
+  };
+
+
 
   return (
     <main className="p-3 max-w-lg mx-auto">
@@ -312,10 +350,10 @@ const Profile = () => {
 
         <button
           type="submit"
-          disabled={uploading || loading}
+          disabled={uploading || isUpdating}
           className="bg-slate-700 text-white p-3 rounded-lg uppercase disabled:opacity-60"
         >
-          {loading ? "Updating..." : "Update"}
+          {isUpdating ? "Updating..." : "Update"}
         </button>
         <Link className="bg-green-700 text-white p-3
          rounded-lg uppercase text-center hover:opacity-95" to={"/create-listing"}>
@@ -324,7 +362,6 @@ const Profile = () => {
       </form>
 
 
-      {error && <p className="text-red-600 text-sm text-center mt-4">{error}</p>}
       {deleteError && <p className="text-red-600 text-sm text-center mt-4">{deleteError}</p>}
       {updateSuccess && (
         <p className="text-green-700 text-sm text-center mt-4">
@@ -349,7 +386,36 @@ const Profile = () => {
           Delete account
         </button>
       </div>
+      <button className="text-green-700 w-full" onClick={handleShowListings}>Show Listings </button>
+      <p>{showListingsError ? "Error fetching listings" : ""}</p>
+       {userListings && userListings.length > 0 &&
+       <div className="flex flex-col gap-4">
+
+         <h1 className="text-center mt-7 text-2xl font-semibold">Your Listings</h1>
+
+         {userListings.map((listing) => (
+         <div key={listing._id} className="border gap-4 flex justify-between items-center p-3 rounded-lg my-2">
+          <Link to={`/listing/${listing._id}`}>
+             <img src={listing.imageUrls[0]} alt="listing cover"
+             className="h-16 w-16 object-contain" />          
+          </Link>
+          <Link className="flex-1 text-slate-700 font-semibold hover:underline truncate" to={`/listing/${listing._id}`}>
+            <p>{listing.name}</p>
+          </Link>
+
+          <div className="flex flex-col items-center">
+            <button className="text-red-700 uppercase">Delete</button>
+           <button className="text-green-700 uppercase">Edit</button>
+
+
+          </div>
+        </div>
+      ))}
+       
+       </div>
+}
     </main>
+
   );
 };
 
