@@ -8,6 +8,7 @@ import SignOut from './pages/SignOut.jsx'
 import Header from './components/Header.jsx'
 import PrivateRoute from './components/PrivateRoute.jsx'
 import CreateListing from './pages/CreateListing.jsx'
+import Listing from './pages/Listing.jsx'
 const App = () => {
   return (
     <BrowserRouter>
@@ -18,6 +19,7 @@ const App = () => {
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/sign-out" element={<SignOut />} />
         <Route path="/about" element={<About />} />
+        <Route path="/listing/:id" element={<Listing />} />
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/create-listing" element={<CreateListing />} />

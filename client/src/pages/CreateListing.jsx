@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Client, Storage, ID } from "appwrite";
 
 // Initialize Appwrite client (only for storage)
@@ -11,10 +12,14 @@ const storage = new Storage(client);
 
 const CreateListing = () => {
   const { currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
+  const [imageUploadSuccess, setImageUploadSuccess] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
   
   const [uploadedImages, setUploadedImages] = useState([]);
   const [formData, setFormData] = useState({
@@ -54,6 +59,7 @@ const CreateListing = () => {
         return {
           ...prev,
           [id]: checked,
+          ...(id === 'offer' && !checked ? { discountedPrice: 0 } : {}),
         };
       }
 
@@ -81,6 +87,7 @@ const CreateListing = () => {
   const handleImageSubmit = async (e) => {
     e.preventDefault();
     setImageUploadError("");
+    setImageUploadSuccess("");
     
     if (!files || files.length === 0) {
       setImageUploadError("You must select a file before uploading.");
@@ -110,10 +117,11 @@ const CreateListing = () => {
       setFormData(nextFormData);
       console.log('Uploaded image URLs:', nextImages);
       setImageUploadError("");
-      alert('Images uploaded successfully!');
+      setImageUploadSuccess("Images uploaded successfully.");
     } catch (error) {
       console.error('Upload failed:', error);
       setImageUploadError(error.message || "Failed to upload images.");
+      setImageUploadSuccess("");
     } finally {
       setUploading(false);
     }
@@ -166,16 +174,20 @@ const CreateListing = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
+    setSubmitSuccess("");
     
     if (uploadedImages.length === 0) {
-      alert('Please upload at least one image');
+      setSubmitError('Please upload at least one image.');
       return;
     }
 
     if (!currentUser?._id) {
-      alert('Please sign in to create a listing');
+      setSubmitError('Please sign in to create a listing.');
       return;
     }
+
+    if(+formData.regularPrice < + formData.discountedPrice) return setSubmitError('Discounted price must be less than regular price.');
 
     try {
       setLoading(true);
@@ -209,7 +221,11 @@ const CreateListing = () => {
       }
 
       console.log('Listing created successfully:', data);
-      alert('Listing created successfully!');
+      const listingId = data?._id || data?.id;
+      if (!listingId) {
+        throw new Error('Listing created but no id returned');
+      }
+      setSubmitSuccess('Listing created successfully.');
       
       // Reset form
       setFormData({
@@ -230,11 +246,15 @@ const CreateListing = () => {
       });
       setUploadedImages([]);
       setFiles([]);
+
+      navigate(`/listing/${listingId}`);
+      
       
     } catch (error) {
       console.error('Full error details:', error);
       console.error('Error message:', error.message);
-      alert('Failed to create listing: ' + error.message);
+      setSubmitError(error.message || 'Failed to create listing');
+      setSubmitSuccess("");
     } finally {
       setLoading(false);
     }
@@ -372,20 +392,23 @@ const CreateListing = () => {
                   <span className='text-xs'>($/month)</span>
                 </div>
               </div>
-              <div className='flex items-center gap-2'>
-                <input 
-                  type="number" 
-                  id="discountedPrice" 
-                  min="1"
-                  value={formData.discountedPrice}
-                  onChange={handleChange}
-                  className='p-3 border border-gray-300 rounded-lg'
-                />
-                <div className='flex flex-col items-center'>
-                  <p>Discount price</p>
-                  <span className='text-xs'>($/month)</span>
+              {formData.offer && (
+                <div className='flex items-center gap-2'>
+                  <input 
+                    type="number" 
+                    id="discountedPrice" 
+                    min="50"
+                    max="100000000"
+                    value={formData.discountedPrice}
+                    onChange={handleChange}
+                    className='p-3 border border-gray-300 rounded-lg'
+                  />
+                  <div className='flex flex-col items-center'>
+                    <p>Discount price</p>
+                    <span className='text-xs'>($/month)</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -402,6 +425,7 @@ const CreateListing = () => {
                 if (e.target.files && e.target.files.length > 0) {
                   setFiles(Array.from(e.target.files));
                   setImageUploadError("");
+                  setImageUploadSuccess("");
                   console.log('Files selected:', e.target.files.length);
                 }
               }}
@@ -450,14 +474,23 @@ const CreateListing = () => {
           {imageUploadError && (
             <p className='text-red-600 text-sm'>{imageUploadError}</p>
           )}
+          {imageUploadSuccess && (
+            <p className='text-green-600 text-sm'>{imageUploadSuccess}</p>
+          )}
           
           <button 
             type="submit"
-            disabled={loading}
+            disabled={loading || uploading}
             className='p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
           >
             {loading ? 'Creating...' : 'Create Listing'}
           </button>
+          {submitError && (
+            <p className='text-red-600 text-sm mt-2'>Failed to create listing: {submitError}</p>
+          )}
+          {submitSuccess && (
+            <p className='text-green-600 text-sm mt-2'>{submitSuccess}</p>
+          )}
         </div>
       </form> 
     </main>
