@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Client, Storage, ID } from "appwrite";
 
 // Initialize Appwrite client (only for storage)
 const client = new Client()
-  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT )
   .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
 
 const storage = new Storage(client);
 
 const CreateListing = () => {
+  const { currentUser } = useSelector((state) => state.user);
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,26 +22,60 @@ const CreateListing = () => {
     description: '',
     address: '',
     imageUrls: [],
+    type: 'rent',
     sale: false,
-    rent: false,
+    rent: true,
     parking: false,
     furnished: false,
     offer: false,
     bedrooms: 1,
     bathrooms: 1,
-    regularPrice: 0,
-    discountPrice: 0
+    regularPrice: 50,
+    discountedPrice: 0
   });
 
+  console.log('Form Data:', formData);
   
 
   const handleChange = (e) => {
     const { id, value, checked, type } = e.target;
     
-    setFormData((prev) => ({
-      ...prev,
-      [id]: type === 'checkbox' ? checked : value
-    }));
+    setFormData((prev) => {
+      if (id === 'sale' || id === 'rent') {
+        return {
+          ...prev,
+          type: id,
+          sale: id === 'sale',
+          rent: id === 'rent',
+        };
+      }
+
+      if (id === 'parking' || id === 'furnished' || id === 'offer') {
+        return {
+          ...prev,
+          [id]: checked,
+        };
+      }
+
+      if (type === 'number') {
+        return {
+          ...prev,
+          [id]: value === '' ? '' : Number(value),
+        };
+      }
+
+      if (type === 'text' || type === 'textarea' ) {
+        return {
+          ...prev,
+          [id]: value,
+        };
+      }
+
+      return {
+        ...prev,
+        [id]: type === 'checkbox' ? checked : value,
+      };
+    });
   };
 
   const handleImageSubmit = async (e) => {
@@ -136,6 +172,11 @@ const CreateListing = () => {
       return;
     }
 
+    if (!currentUser?._id) {
+      alert('Please sign in to create a listing');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -143,6 +184,7 @@ const CreateListing = () => {
       const listingData = {
         ...formData,
         imageUrls: uploadedImages,
+        userRef: currentUser._id,
       };
 
       console.log('Sending data to backend:', listingData);
@@ -175,15 +217,16 @@ const CreateListing = () => {
         description: '',
         address: '',
         imageUrls: [],
+        type: 'rent',
         sale: false,
-        rent: false,
+        rent: true,
         parking: false,
         furnished: false,
         offer: false,
         bedrooms: 1,
         bathrooms: 1,
         regularPrice: 0,
-        discountPrice: 0
+        discountedPrice: 0
       });
       setUploadedImages([]);
       setFiles([]);
@@ -204,6 +247,7 @@ const CreateListing = () => {
       </h1>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
         <div className='flex flex-col sm:flex-row flex-1 gap-4'>
+          <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 flex-1">
             <input 
               type="text" 
@@ -252,7 +296,7 @@ const CreateListing = () => {
                   type="checkbox" 
                   id="rent" 
                   className='w-5'
-                  checked={formData.rent}
+                  checked={formData.rent && formData.type === 'rent'}
                   onChange={handleChange}
                 />
                 <span>Rent</span>
@@ -317,7 +361,8 @@ const CreateListing = () => {
                 <input 
                   type="number" 
                   id="regularPrice" 
-                  min="1"
+                  min="50"
+                  max="1000000"
                   value={formData.regularPrice}
                   onChange={handleChange}
                   className='p-3 border border-gray-300 rounded-lg'
@@ -330,9 +375,9 @@ const CreateListing = () => {
               <div className='flex items-center gap-2'>
                 <input 
                   type="number" 
-                  id="discountPrice" 
+                  id="discountedPrice" 
                   min="1"
-                  value={formData.discountPrice}
+                  value={formData.discountedPrice}
                   onChange={handleChange}
                   className='p-3 border border-gray-300 rounded-lg'
                 />
@@ -344,6 +389,8 @@ const CreateListing = () => {
             </div>
           </div>
         </div>
+        </div>
+
         
         <div className='flex flex-col flex-1 gap-4'>
           <p className='font-semibold'>Images:
