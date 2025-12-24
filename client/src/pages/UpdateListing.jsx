@@ -38,6 +38,7 @@ const UpdateListing = () => {
     regularPrice: 50,
     discountedPrice: 0
   });
+  const isRent = formData.rent;
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -407,7 +408,7 @@ const UpdateListing = () => {
                 />
                 <div className='flex flex-col items-center'>
                   <p>Regular price</p>
-                  <span className='text-xs'>($/month)</span>
+                  {isRent && <span className='text-xs'>($/month)</span>}
                 </div>
               </div>
               {formData.offer && (
@@ -423,7 +424,7 @@ const UpdateListing = () => {
                   />
                   <div className='flex flex-col items-center'>
                     <p>Discount price</p>
-                    <span className='text-xs'>($/month)</span>
+                    {isRent && <span className='text-xs'>($/month)</span>}
                   </div>
                 </div>
               )}

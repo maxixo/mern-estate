@@ -260,6 +260,8 @@ const CreateListing = () => {
     }
   };
     
+  const isRent = formData.rent;
+
   return (
     <main className='p-3 max-w-4xl mx-auto'>
       <h1 className="text-3xl font-semibold text-center my-7">
@@ -389,7 +391,7 @@ const CreateListing = () => {
                 />
                 <div className='flex flex-col items-center'>
                   <p>Regular price</p>
-                  <span className='text-xs'>($/month)</span>
+                  {isRent && <span className='text-xs'>($/month)</span>}
                 </div>
               </div>
               {formData.offer && (
@@ -405,7 +407,7 @@ const CreateListing = () => {
                   />
                   <div className='flex flex-col items-center'>
                     <p>Discount price</p>
-                    <span className='text-xs'>($/month)</span>
+                    {isRent && <span className='text-xs'>($/month)</span>}
                   </div>
                 </div>
               )}
