@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import SwiperCore from "swiper";
+import { Navigation } from "swiper/modules";
+import "swiper/css/bundle";
 
 const Listing = () => {
+  SwiperCore.use([Navigation]);
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +20,7 @@ const Listing = () => {
       setError("");
 
       try {
-        const response = await fetch(`/api/listing/${id}`);
+        const response = await fetch(`/api/listing/get/${id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -50,8 +55,16 @@ const Listing = () => {
 
   if (loading) {
     return (
-      <main className="p-3 max-w-4xl mx-auto">
-        <p className="text-slate-600">Loading listing...</p>
+      <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-12 w-12 rounded-full border-4 border-slate-200 border-t-slate-600 animate-spin"
+            aria-hidden="true"
+          />
+          <p className="text-slate-600 text-sm tracking-wide">
+            Loading listing...
+          </p>
+        </div>
       </main>
     );
   }
@@ -67,7 +80,7 @@ const Listing = () => {
   if (!listing) {
     return (
       <main className="p-3 max-w-4xl mx-auto">
-        <p className="text-slate-600">Listing not found.</p>
+        <p className="text-slate-600 text-center">Listing not found.</p>
       </main>
     );
   }
@@ -76,61 +89,21 @@ const Listing = () => {
   const price = listing.offer ? listing.discountedPrice : listing.regularPrice;
 
   return (
-    <main className="p-3 max-w-4xl mx-auto">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-semibold">{listing.name}</h1>
-          <p className="text-slate-600">{listing.address}</p>
-        </div>
-
-        {Array.isArray(listing.imageUrls) && listing.imageUrls.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {listing.imageUrls.map((url, index) => (
-              <img
-                key={`${url}-${index}`}
-                src={url}
-                alt={`${listing.name}-${index + 1}`}
-                className="w-full h-64 object-cover rounded-lg"
-              />
+    <main className="min-h-screen w-full p-0">
+      {listing && !loading && !error && (
+        <div className="w-full">
+          <Swiper navigation className="w-full">
+            {(listing.imageUrls || []).map((url) => (
+              <SwiperSlide key={url}>
+                <div
+                  className="w-full h-[450px] sm:h-[520px] md:h-[600px]"
+                  style={{ background: `url(${url}) center/cover no-repeat` }}
+                />
+              </SwiperSlide>
             ))}
-          </div>
-        ) : (
-          <p className="text-slate-500 text-sm">No images available.</p>
-        )}
-
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="px-2 py-1 bg-slate-100 rounded">{listingTypeLabel}</span>
-          <span className="px-2 py-1 bg-slate-100 rounded">
-            {listing.bedrooms} Beds
-          </span>
-          <span className="px-2 py-1 bg-slate-100 rounded">
-            {listing.bathrooms} Baths
-          </span>
-          {listing.parking && (
-            <span className="px-2 py-1 bg-slate-100 rounded">Parking</span>
-          )}
-          {listing.furnished && (
-            <span className="px-2 py-1 bg-slate-100 rounded">Furnished</span>
-          )}
-          {listing.offer && (
-            <span className="px-2 py-1 bg-slate-100 rounded">Offer</span>
-          )}
+          </Swiper>
         </div>
-
-        <div className="flex flex-col gap-1">
-          <p className="text-xl font-semibold">${price}</p>
-          {listing.offer && (
-            <p className="text-sm text-slate-500 line-through">
-              ${listing.regularPrice}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Description</h2>
-          <p className="text-slate-700">{listing.description}</p>
-        </div>
-      </div>
+      )}
     </main>
   );
 };
