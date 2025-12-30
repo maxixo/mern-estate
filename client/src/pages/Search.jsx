@@ -219,13 +219,16 @@ const onShowMoreClick = async () => {
 
               )
              }
-             {
+             <div className='grid grid-cols-3 gap-5 mx-auto'>
+              {
               !loading && 
                listings && 
                listings.map((listing) => (
-                <ListingItem  key={listing._id} listing={listing}/>
+                <ListingItem className=""  key={listing._id} listing={listing}/>
               ))
              }
+             </div>
+            
              {
               showMore && (
                 <button
