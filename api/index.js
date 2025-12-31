@@ -28,6 +28,15 @@ mongoose.connect(process.env.MONGO).then(() => {
 app.use(express.json());
 app.use(cookieParser());
 
+// CSP Middleware - Allow fonts, styles, scripts, images, and API connections
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https:;"
+  );
+  next();
+});
+
 // Routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
