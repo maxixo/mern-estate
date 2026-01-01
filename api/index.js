@@ -12,6 +12,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+// Path to client's dist directory
+const clientDistPath = path.resolve(__dirname, '../client/dist');
+
 const app = express();
 
 mongoose.connect(process.env.MONGO).then(() => {
@@ -37,10 +40,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Serve static files from client/dist directory
+app.use(express.static(clientDistPath));
+
+// API routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
-app.use('/api/listing', listingRouter); // Assuming listingRouter is defined elsewhere
+app.use('/api/listing', listingRouter);
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res, next) => {
+  // If the request is for an API route, skip this handler
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  // Serve index.html for all other routes (client-side routing)
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 // JSON parse error handling
 app.use((err, req, res, next) => {
