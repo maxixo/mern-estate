@@ -48,14 +48,19 @@ app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use('/api/listing', listingRouter);
 
-// SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res, next) => {
+// SPA fallback - serve index.html for all non-API, non-static routes
+app.use((req, res, next) => {
   // If the request is for an API route, skip this handler
   if (req.path.startsWith('/api')) {
     return next();
   }
-  // Serve index.html for all other routes (client-side routing)
-  res.sendFile(path.join(clientDistPath, 'index.html'));
+  // If the file exists as a static file, skip this handler
+  if (req.accepts('html') && !req.path.includes('.')) {
+    // Serve index.html for client-side routing
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  } else {
+    next();
+  }
 });
 
 // JSON parse error handling
