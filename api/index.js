@@ -76,4 +76,3 @@ app.use((err, req, res, next) => {
     message
   });
 });
-  const statusCode = err.statusCode || 500;
