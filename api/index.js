@@ -31,15 +31,6 @@ mongoose.connect(process.env.MONGO).then(() => {
 app.use(express.json());
 app.use(cookieParser());
 
-// CSP Middleware - Allow fonts, styles, scripts, images, and API connections
-app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com; img-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https://accounts.google.com;"
-  );
-  next();
-});
-
 // Serve static files from client/dist directory
 app.use(express.static(clientDistPath));
 
@@ -85,3 +76,4 @@ app.use((err, req, res, next) => {
     message
   });
 });
+  const statusCode = err.statusCode || 500;
