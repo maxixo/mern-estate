@@ -9,7 +9,7 @@ export default function ListingItem({ listing }) {
   
   return (
     <div className="bg-white shadow-md hover:shadow-lg 
-    transition-shadow overflow-hidden  w-full sm:w-[330px] lg:w-[300px] rounded-lg">
+    transition-shadow overflow-hidden rounded-lg w-full">
       
     <Link to={`/listing/${listing._id}`}>
     {imageUrl && <img src={imageUrl} className="h-80 sm:h-[220px] w-full object-cover hover:scale-105 transition-scale duration-300 "     alt="listing" />}

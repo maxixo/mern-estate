@@ -114,7 +114,7 @@ console.log(offerListings);
                   Show more offers
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
                 {offerListings.map((listing) => (
                   <ListingItem listing={listing} key={listing._id} />
                 ))}
@@ -131,7 +131,7 @@ console.log(offerListings);
                   Show rent listings
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
                 {rentListings.map((listing) => (
                   <ListingItem listing={listing} key={listing._id} />
                 ))}
@@ -148,7 +148,7 @@ console.log(offerListings);
                   Show sale offers
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
                 {saleListings.map((listing) => (
                   <ListingItem listing={listing} key={listing._id} />
                 ))}
