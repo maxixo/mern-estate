@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Client, Storage, ID } from "appwrite";
+import { secureFetch } from "../lib/csrf";
 
 // Initialize Appwrite client (only for storage)
 const client = new Client()
@@ -202,12 +203,8 @@ const CreateListing = () => {
       console.log('Sending data to backend:', listingData);
 
       // Send to your MongoDB backend API
-      const response = await fetch('/api/listing/create', {
+      const response = await secureFetch('/api/listing/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify(listingData)
       });
 
@@ -500,3 +497,4 @@ const CreateListing = () => {
 };
 
 export default CreateListing;
+

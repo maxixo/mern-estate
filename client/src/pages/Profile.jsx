@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect} from "react";
 import { storage, ID } from "../lib/appwrite";
+import { secureFetch } from "../lib/csrf";
 import {
   updateUserStart,
   updateUserSuccess,
@@ -143,12 +144,8 @@ const Profile = () => {
       setIsUpdating(true);
       dispatch(updateUserStart());
       
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+      const res = await secureFetch(`/api/user/update/${currentUser._id}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
         body: JSON.stringify(formData),
       });
 
@@ -184,12 +181,8 @@ const Profile = () => {
       clearLocalErrors();
       dispatch(deleteUserStart());
       
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+      const res = await secureFetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
       });
 
       const data = await res.json();
@@ -248,7 +241,9 @@ const Profile = () => {
   const handleShowListings = async () => {
       try {
         clearLocalErrors();
-        const res = await fetch(`/api/user/listings/${currentUser._id}`);
+        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
+          credentials: "include",
+        });
         const data = await res.json();
         if (data.success === false) {
 
@@ -265,7 +260,7 @@ const Profile = () => {
 
   const handleListingDelete = async (listingId) => {
      try {
-       const res = await fetch(`/api/listing/delete/${listingId}`, {
+       const res = await secureFetch(`/api/listing/delete/${listingId}`, {
         method: "DELETE",
     });
     const data = await res.json();
