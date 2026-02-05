@@ -241,9 +241,7 @@ const Profile = () => {
   const handleShowListings = async () => {
       try {
         clearLocalErrors();
-        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
-          credentials: "include",
-        });
+        const res = await secureFetch(`/api/user/listings/${currentUser._id}`);
         const data = await res.json();
         if (data.success === false) {
 
